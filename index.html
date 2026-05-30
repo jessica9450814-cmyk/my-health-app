@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日健康記錄 🌸</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #fdf6f7; padding: 20px; line-height: 1.6; color: #555; }
+        .container { max-width: 450px; margin: auto; background: #ffffff; padding: 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.3); border: 2px solid #ffe4e6; }
+        h2 { text-align: center; color: #ff758c; font-size: 26px; margin-bottom: 25px; }
+        
+        .group-title { font-size: 14px; color: #999; margin-bottom: 10px; margin-top: 20px; font-weight: bold; text-transform: uppercase; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select { padding: 15px; font-size: 16px; width: 100%; box-sizing: border-box; border: 2px solid #ffccd5; border-radius: 15px; background-color: #fff9fa; }
+        
+        button { width: 100%; padding: 15px; font-size: 18px; background-color: #ff758c; color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 25px; transition: 0.3s; }
+        button:hover { background-color: #ff5270; transform: scale(1.02); }
+        .nav-link { display: block; text-align: center; margin-top: 20px; color: #888; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🌸 每日健康記錄</h2>
+        <form id="healthForm">
+            <div class="group-title">日期</div>
+            <div class="form-group"><input type="date" id="date" required></div>
+
+            <div class="group-title">生命徵象</div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>收縮壓</label><input type="number" id="systolic" placeholder="mmHg" required></div>
+                <div class="form-group" style="flex: 1;"><label>舒張壓</label><input type="number" id="diastolic" placeholder="mmHg" required></div>
+            </div>
+            <div class="form-group"><label>心跳</label><input type="number" id="heart_rate" placeholder="bpm" required></div>
+
+            <div class="group-title">紀錄</div>
+            <div class="form-group">
+                <label>今日服藥</label>
+                <select id="took_medicine">
+                    <option value="1">有服藥</option>
+                    <option value="0">無服藥</option>
+                </select>
+            </div>
+            <div class="form-group"><label>不適症狀</label><input type="text" id="discomfort" placeholder="若無可留空"></div>
+            <div class="form-group"><label>排便狀況</label><input type="text" id="bowel_movement" placeholder="例：正常、便秘"></div>
+
+            <button type="submit">送出資料</button>
+        </form>
+        <a href="/dashboard" class="nav-link">前往查看儀表板 →</a>
+    </div>
+
+    <script>
+        // 初始化日期
+        document.getElementById('date').valueAsDate = new Date();
+
+        document.getElementById('healthForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const systolic = document.getElementById('systolic').value;
+            const diastolic = document.getElementById('diastolic').value;
+            const heartRate = document.getElementById('heart_rate').value;
+            
+            // 異常警示功能
+            let warnings = [];
+            if (systolic > 130) warnings.push("收縮壓偏高");
+            if (diastolic > 85) warnings.push("舒張壓偏高");
+            if (heartRate > 100 || heartRate < 60) warnings.push("心跳異常");
+            
+            if (warnings.length > 0) {
+                alert("✨ 小提醒：\n" + warnings.join("、") + "\n請多休息，注意身體喔！");
+            }
+
+            const data = {
+                date: document.getElementById('date').value,
+                systolic: systolic,
+                diastolic: diastolic,
+                heart_rate: heartRate,
+                took_medicine: document.getElementById('took_medicine').value,
+                discomfort: document.getElementById('discomfort').value || "無",
+                bowel_movement: document.getElementById('bowel_movement').value || "無"
+            };
+            
+            // 發送資料給後端
+            const response = await fetch('/api/health', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            alert("💖 " + result.message);
+            
+            // 清空表單並重置日期
+            document.getElementById('healthForm').reset();
+            document.getElementById('date').valueAsDate = new Date();
+        });
+    </script>
+</body>
+</html>

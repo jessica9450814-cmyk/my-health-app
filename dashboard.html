@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>健康儀表板 🌸</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #fdf6f7; padding: 20px; color: #555; }
+        .container { max-width: 800px; margin: auto; }
+        h2 { color: #ff758c; text-align: center; margin-bottom: 25px; }
+
+        /* 分區塊樣式 */
+        .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.2); margin-bottom: 20px; border: 1px solid #ffe4e6; }
+        .section-title { font-size: 18px; color: #ff758c; font-weight: bold; margin-bottom: 15px; border-left: 5px solid #ff758c; padding-left: 10px; }
+
+        .summary-card { display: flex; justify-content: space-around; background: #fff9fa; padding: 20px; border-radius: 20px; border: 1px solid #ffe4e6; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #ff758c; text-align: center; }
+        .stat-label { font-size: 13px; color: #888; text-align: center; margin-bottom: 5px; }
+
+        .progress-bar { height: 10px; background: #ffe4e6; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        #progressFill { height: 100%; background: #ff758c; width: 0%; transition: 1s ease-out; }
+
+        .export-btn { width: 100%; padding: 12px; background-color: #ffccd5; border: none; border-radius: 20px; color: #d63384; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th { color: #ff758c; padding: 12px; border-bottom: 2px solid #ffe4e6; }
+        td { padding: 12px; border-bottom: 1px solid #fceef0; text-align: center; }
+        .danger-row { background-color: #fff0f3; color: #d63384; }
+        .del-btn { cursor: pointer; color: #ff758c; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🌸 健康儀表板</h2>
+
+        <div class="section">
+            <div class="section-title">狀況提醒</div>
+            <div id="reminderBox" style="background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 15px; display: none; margin-bottom: 10px;"></div>
+            <div id="alertBox" style="background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 15px; display: none;"></div>
+            <div class="summary-card" style="margin-top: 15px;">
+                <div><div class="stat-label">最新收縮壓</div><div class="stat-value" id="lastSys">-</div></div>
+                <div><div class="stat-label">最新心跳</div><div class="stat-value" id="lastHr">-</div></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">服藥進度</div>
+            <div id="medicineStatus" style="font-size: 14px; font-weight: bold; color: #ff758c;">載入中...</div>
+            <div class="progress-bar"><div id="progressFill"></div></div>
+            <button class="export-btn" onclick="exportToCSV()">📥 匯出健康報表 (CSV)</button>
+        </div>
+
+        <div class="section">
+            <div class="section-title">趨勢分析</div>
+            <canvas id="myChart" style="max-height: 250px;"></canvas>
+            <table>
+                <thead><tr><th>日期</th><th>血壓</th><th>心跳</th><th>管理</th></tr></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <a href="/" style="display: block; text-align: center; color: #aaa; text-decoration: none; font-size: 14px; margin-bottom: 30px;">← 回到輸入頁面</a>
+    </div>
+
+    <script>
+        async function initDashboard() {
+            const res = await fetch('/api/health');
+            const data = await res.json();
+            if (data.length === 0) return;
+
+            const sortedData = [...data].reverse();
+            
+            // 提醒邏輯
+            const today = new Date().toISOString().split('T')[0];
+            if (!data.some(row => row.record_date === today)) {
+                document.getElementById('reminderBox').style.display = 'block';
+                document.getElementById('reminderBox').innerHTML = `🔔 提醒：您今天尚未輸入紀錄喔！`;
+            }
+            document.getElementById('lastSys').textContent = sortedData[0].systolic;
+            document.getElementById('lastHr').textContent = sortedData[0].heart_rate;
+            if (sortedData[0].systolic > 130) {
+                document.getElementById('alertBox').style.display = 'block';
+                document.getElementById('alertBox').innerHTML = `⚠️ 注意：最新收縮壓偏高，請多留意！`;
+            }
+
+            updateMedicineStatus(data);
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = sortedData.map(row => `
+                <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
+                    <td>${row.record_date}</td>
+                    <td>${row.systolic}/${row.diastolic}</td>
+                    <td>${row.heart_rate}</td>
+                    <td><span class="del-btn" onclick="deleteRecord('${row.id}')">🗑️</span></td>
+                </tr>
+            `).join('');
+
+            // 圖表：三線圖 (收縮壓粉紅, 舒張壓金黃, 心跳藍)
+            new Chart(document.getElementById('myChart'), {
+                type: 'line',
+                data: {
+                    labels: sortedData.map(r => r.record_date),
+                    datasets: [
+                        { label: '收縮壓', data: sortedData.map(r => r.systolic), borderColor: '#ff758c', tension: 0.4 },
+                        { label: '舒張壓', data: sortedData.map(r => r.diastolic), borderColor: '#ffd700', tension: 0.4 },
+                        { label: '心跳', data: sortedData.map(r => r.heart_rate), borderColor: '#75d6ff', tension: 0.4 }
+                    ]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'top' } } }
+            });
+        }
+
+        function updateMedicineStatus(data) {
+            const now = new Date();
+            const thisMonthData = data.filter(r => {
+                const d = new Date(r.record_date);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+            const total = thisMonthData.length;
+            const taken = thisMonthData.filter(r => r.took_medicine == 1).length;
+            const pct = total > 0 ? (taken / total) * 100 : 0;
+            document.getElementById('medicineStatus').textContent = `本月已記錄 ${total} 天，共 ${taken} 天服藥`;
+            document.getElementById('progressFill').style.width = pct + "%";
+        }
+
+        async function deleteRecord(id) {
+            if(confirm("確定刪除此筆紀錄？")) {
+                await fetch(`/api/health/${id}`, { method: 'DELETE' });
+                location.reload();
+            }
+        }
+
+        function exportToCSV() {
+            fetch('/api/health').then(res => res.json()).then(data => {
+                let csv = "日期,收縮壓,舒張壓,心跳,服藥,症狀,排便\n";
+                data.forEach(r => csv += `${r.record_date},${r.systolic},${r.diastolic},${r.heart_rate},${r.took_medicine},${r.discomfort},${r.bowel_movement}\n`);
+                const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "健康紀錄.csv";
+                link.click();
+            });
+        }
+        initDashboard();
+    </script>
+</body>
+</html>
