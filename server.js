@@ -59,7 +59,7 @@ app.post('/api/chat', async (req, res) => {
         }
         
         // 修正模型名稱路徑
-        const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
+       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const prompt = `你是專業的居家健康照護助手。回答要溫暖、清晰。若有緊急狀況（如胸痛、呼吸困難），務必建議立即就醫。不要提供正式醫療診斷。使用者問題：${message}`;
         
         const result = await model.generateContent(prompt);
