@@ -1,13 +1,14 @@
 {
   "name": "my-health-app",
   "version": "1.0.0",
-  "description": "Health Tracker",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "better-sqlite3": "^11.8.1"
+    "openai": "^6.44.0",
+    "sqlite3": "^5.1.7"
   }
 }

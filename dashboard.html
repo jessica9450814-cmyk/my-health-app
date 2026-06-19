@@ -9,7 +9,6 @@
         .container { max-width: 800px; margin: auto; }
         h2 { color: #ff758c; text-align: center; margin-bottom: 25px; }
 
-        /* 分區塊樣式 */
         .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.2); margin-bottom: 20px; border: 1px solid #ffe4e6; }
         .section-title { font-size: 18px; color: #ff758c; font-weight: bold; margin-bottom: 15px; border-left: 5px solid #ff758c; padding-left: 10px; }
 
@@ -20,8 +19,11 @@
         .progress-bar { height: 10px; background: #ffe4e6; border-radius: 5px; margin-top: 10px; overflow: hidden; }
         #progressFill { height: 100%; background: #ff758c; width: 0%; transition: 1s ease-out; }
 
+        .ai-box { background: #fff0f5; padding: 20px; border-radius: 20px; border: 1px dashed #ff758c; margin-top: 20px; }
+        input[type="text"] { width: 70%; padding: 10px; border-radius: 10px; border: 1px solid #ffccd5; }
+        button { padding: 10px 15px; background-color: #ff758c; color: white; border: none; border-radius: 10px; cursor: pointer; }
+
         .export-btn { width: 100%; padding: 12px; background-color: #ffccd5; border: none; border-radius: 20px; color: #d63384; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th { color: #ff758c; padding: 12px; border-bottom: 2px solid #ffe4e6; }
         td { padding: 12px; border-bottom: 1px solid #fceef0; text-align: center; }
@@ -47,6 +49,14 @@
             <div class="section-title">服藥進度</div>
             <div id="medicineStatus" style="font-size: 14px; font-weight: bold; color: #ff758c;">載入中...</div>
             <div class="progress-bar"><div id="progressFill"></div></div>
+            
+            <div class="ai-box">
+                <div class="section-title" style="font-size: 16px;">🤖 AI 健康諮詢助手</div>
+                <input type="text" id="aiInput" placeholder="例如：血壓 140/90 該注意什麼？">
+                <button onclick="askAI()">詢問</button>
+                <p id="aiReply" style="margin-top: 10px; font-size: 14px; color: #d63384;"></p>
+            </div>
+
             <button class="export-btn" onclick="exportToCSV()">📥 匯出健康報表 (CSV)</button>
         </div>
 
@@ -63,6 +73,22 @@
     </div>
 
     <script>
+        // AI 呼叫函數
+        async function askAI() {
+            const input = document.getElementById('aiInput').value;
+            const reply = document.getElementById('aiReply');
+            if (!input) return;
+            
+            reply.innerText = "AI 正在分析中，請稍候...";
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input })
+            });
+            const data = await res.json();
+            reply.innerText = data.reply || data.error;
+        }
+
         async function initDashboard() {
             const res = await fetch('/api/health');
             const data = await res.json();
@@ -95,7 +121,6 @@
                 </tr>
             `).join('');
 
-            // 圖表：三線圖 (收縮壓粉紅, 舒張壓金黃, 心跳藍)
             new Chart(document.getElementById('myChart'), {
                 type: 'line',
                 data: {
