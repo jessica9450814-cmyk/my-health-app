@@ -1,3 +1,4 @@
+// 確保最先載入環境變數
 require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
@@ -7,14 +8,19 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 初始化 Gemini
-const apiKey = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey || "");
+// 【修正重點】：同時檢查兩個變數名稱，確保 Render 能讀到
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+
+// 如果 API 金鑰仍然是空的，在這裡印出詳細的檢查資訊
+if (!apiKey) {
+    console.error("警告：環境變數 GEMINI_API_KEY 或 API_KEY 均未被讀取到！");
+}
+
+const genAI = new GoogleGenerativeAI(apiKey || "MISSING");
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); 
 
-// 連接資料庫
 const db = new sqlite3.Database(path.join(__dirname, 'health_data.db'));
 
 // 初始化資料庫
@@ -30,7 +36,7 @@ db.run(`CREATE TABLE IF NOT EXISTS health_records (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
-// --- 路由處理 ---
+// 路由
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 
@@ -55,18 +61,16 @@ app.get('/api/health', (req, res) => {
 app.post('/api/chat', async (req, res) => {
     const { message } = req.body;
     try {
-        if (!apiKey) throw new Error("API Key 未設定");
+        if (!apiKey || apiKey === "MISSING") {
+            return res.status(500).json({ error: "伺服器環境變數未正確載入 API Key。" });
+        }
         
-        // 使用 gemini-1.5-flash
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `你是專業的居家健康照護助手。回答要溫暖、清晰。若有緊急狀況（如胸痛、呼吸困難），務必建議立即就醫。不要提供正式醫療診斷。使用者問題：${message}`;
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        res.json({ reply: response.text() });
+        const result = await model.generateContent(`你是專業居家健康照護助手。問題：${message}`);
+        res.json({ reply: result.response.text() });
     } catch (error) {
-        console.error("Gemini API 錯誤:", error.message);
-        res.status(500).json({ error: "AI 服務無法回應，請確保 API Key 正確且來自 Google AI Studio。" });
+        console.error("【最終排錯】 Gemini Error:", error.message);
+        res.status(500).json({ error: `AI 服務錯誤: ${error.message}` });
     }
 });
 
