@@ -34,13 +34,14 @@
         th { color: var(--main-color); padding: 12px; border-bottom: 2px solid var(--border-color); }
         td { padding: 12px; border-bottom: 1px solid #fceef0; text-align: center; }
         .danger-row { background-color: #fff0f3; color: #d63384; }
+        .del-btn { cursor: pointer; color: var(--main-color); font-size: 18px; transition: 0.2s; }
+        .del-btn:hover { transform: scale(1.3); }
     </style>
 </head>
 
 <body>
     <div class="container">
         <h2>🌸 健康儀表板</h2>
-
         <div class="theme-selector">
             <button class="theme-btn" style="background:#ff758c" onclick="changeTheme('theme-pink')"></button>
             <button class="theme-btn" style="background:#3498db" onclick="changeTheme('theme-blue')"></button>
@@ -71,7 +72,7 @@
             <div class="section-title">趨勢分析</div>
             <canvas id="myChart" style="max-height: 250px;"></canvas>
             <table>
-                <thead><tr><th>日期</th><th>血壓</th><th>心跳</th></tr></thead>
+                <thead><tr><th>日期</th><th>血壓</th><th>心跳</th><th>管理</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -116,11 +117,13 @@
             updateMedicineStatus(data);
 
             const tbody = document.getElementById('tableBody');
+            // 【重要】確保 ID 欄位名稱對應正確，如果你的資料庫 ID 欄位是 _id，請改為 row._id
             tbody.innerHTML = sortedData.map(row => `
                 <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
                     <td>${row.record_date}</td>
                     <td>${row.systolic}/${row.diastolic}</td>
                     <td>${row.heart_rate}</td>
+                    <td><span class="del-btn" onclick="deleteRecord('${row.id}')">🗑️</span></td>
                 </tr>
             `).join('');
 
@@ -162,6 +165,22 @@
             document.getElementById('medicineStatus').textContent = `本月已記錄 ${total} 天，共 ${taken} 天服藥`;
             document.getElementById('progressFill').style.width = pct + "%";
             document.getElementById('progressFill').style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
+        }
+
+        async function deleteRecord(id) {
+            if(confirm("確定刪除此筆紀錄？")) {
+                try {
+                    const response = await fetch(`/api/health/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        alert("刪除成功！");
+                        location.reload();
+                    } else {
+                        alert("刪除失敗，請檢查 API 路徑或 ID。");
+                    }
+                } catch (error) {
+                    console.error("刪除錯誤:", error);
+                }
+            }
         }
 
         function exportToCSV() {
