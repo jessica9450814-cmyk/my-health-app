@@ -23,6 +23,9 @@
         .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border-color); }
         .section-title { font-size: 18px; color: var(--main-color); font-weight: bold; margin-bottom: 15px; border-left: 5px solid var(--main-color); padding-left: 10px; }
 
+        /* 健康建議卡片 */
+        .advice-card { background: #fffdf5; border-left: 5px solid #f1c40f; padding: 20px; border-radius: 20px; margin-bottom: 20px; color: #856404; font-size: 14px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+
         .summary-card { display: flex; justify-content: space-around; background: #fff9fa; padding: 20px; border-radius: 20px; border: 1px solid var(--border-color); }
         .stat-value { font-size: 28px; font-weight: bold; color: var(--main-color); text-align: center; }
         .stat-label { font-size: 13px; color: #888; text-align: center; margin-bottom: 5px; }
@@ -49,6 +52,8 @@
             <button class="theme-btn" style="background:#27ae60" onclick="changeTheme('theme-green')"></button>
             <button class="theme-btn" style="background:#9b59b6" onclick="changeTheme('theme-purple')"></button>
         </div>
+
+        <div id="advicePlaceholder"></div>
 
         <div class="section">
             <div class="section-title">狀況提醒</div>
@@ -88,6 +93,23 @@
             location.reload(); 
         }
 
+        // 自動建議邏輯
+        function generateAdvice(record) {
+            let advice = "<h3>🩺 健康分析小提醒</h3><ul>";
+            if (record.systolic > 140 || record.diastolic > 90) {
+                advice += "<li><b>血壓偏高：</b>建議減少鈉攝取，多喝水，保持規律作息。</li>";
+            } else if (record.systolic > 130) {
+                advice += "<li><b>血壓略高：</b>請注意飲食清淡，增加適度有氧運動。</li>";
+            } else {
+                advice += "<li><b>血壓穩定：</b>目前的血壓狀況很棒，請繼續保持！</li>";
+            }
+            if (record.heart_rate > 100) advice += "<li><b>心跳偏快：</b>若休息時心跳仍過快，建議放慢呼吸。</li>";
+            if (record.took_medicine == 0) advice += "<li><b>用藥提醒：</b>本日未記錄服藥，請檢查是否忘記服用！</li>";
+            if (record.bowel_movement && record.bowel_movement.includes('便秘')) advice += "<li><b>腸胃提醒：</b>紀錄顯示便秘，建議多吃高纖蔬果，並補充水分。</li>";
+            if (record.discomfort !== "無" && record.discomfort !== "") advice += `<li><b>症狀留意：</b>您記錄了「${record.discomfort}」，請多休息。</li>`;
+            return advice + "</ul>";
+        }
+
         async function initDashboard() {
             const res = await fetch('/api/health');
             const data = await res.json();
@@ -97,6 +119,11 @@
             }
 
             const sortedData = [...data].reverse();
+            
+            // 顯示建議
+            const adviceContainer = document.getElementById('advicePlaceholder');
+            adviceContainer.innerHTML = `<div class="advice-card">${generateAdvice(sortedData[0])}</div>`;
+
             const today = new Date().toISOString().split('T')[0];
             if (!data.some(row => row.record_date === today)) {
                 document.getElementById('reminderBox').style.display = 'block';
