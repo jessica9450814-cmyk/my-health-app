@@ -118,14 +118,17 @@
 
             const tbody = document.getElementById('tableBody');
             // 【重要】確保 ID 欄位名稱對應正確，如果你的資料庫 ID 欄位是 _id，請改為 row._id
-            tbody.innerHTML = sortedData.map(row => `
-                <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
-                    <td>${row.record_date}</td>
-                    <td>${row.systolic}/${row.diastolic}</td>
-                    <td>${row.heart_rate}</td>
-                    <td><span class="del-btn" onclick="deleteRecord('${row.id}')">🗑️</span></td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = sortedData.map(row => {
+    const recordId = row.id || row._id; // 自動選擇正確的 ID 欄位
+    return `
+        <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
+            <td>${row.record_date}</td>
+            <td>${row.systolic}/${row.diastolic}</td>
+            <td>${row.heart_rate}</td>
+            <td><span class="del-btn" onclick="deleteRecord('${recordId}')">🗑️</span></td>
+        </tr>
+    `;
+}).join('');
 
             const mainColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
             new Chart(document.getElementById('myChart'), {
