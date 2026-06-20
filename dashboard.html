@@ -5,30 +5,57 @@
     <title>健康儀表板 🌸</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 在這裡修改 --main-color 即可改變整個網站的主題色 */
+        /* --- 主題顏色設定 --- */
+        /* 若要更換顏色，請將你想要的顏色區塊註解移開，並註解掉其他的 */
+
+        /* 1. 🌸 預設粉紅 */
         :root {
             --main-color: #ff758c;
-            --light-pink: #fdf6f7;
-            --border-pink: #ffe4e6;
+            --light-bg: #fdf6f7;
+            --border-color: #ffe4e6;
         }
 
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--light-pink); padding: 20px; color: #555; }
+        /* 2. 🌊 海洋藍 
+        :root {
+            --main-color: #3498db;
+            --light-bg: #eaf2f8;
+            --border-color: #d1e8f9;
+        }
+        */
+
+        /* 3. 🌿 森林綠 
+        :root {
+            --main-color: #27ae60;
+            --light-bg: #eafaf1;
+            --border-color: #d5f5e3;
+        }
+        */
+
+        /* 4. 💜 質感紫 
+        :root {
+            --main-color: #9b59b6;
+            --light-bg: #f4ecf7;
+            --border-color: #e8daef;
+        }
+        */
+
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--light-bg); padding: 20px; color: #555; }
         .container { max-width: 800px; margin: auto; }
         h2 { color: var(--main-color); text-align: center; margin-bottom: 25px; }
 
-        .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.2); margin-bottom: 20px; border: 1px solid var(--border-pink); }
+        .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border-color); }
         .section-title { font-size: 18px; color: var(--main-color); font-weight: bold; margin-bottom: 15px; border-left: 5px solid var(--main-color); padding-left: 10px; }
 
-        .summary-card { display: flex; justify-content: space-around; background: #fff9fa; padding: 20px; border-radius: 20px; border: 1px solid var(--border-pink); }
+        .summary-card { display: flex; justify-content: space-around; background: #fff9fa; padding: 20px; border-radius: 20px; border: 1px solid var(--border-color); }
         .stat-value { font-size: 28px; font-weight: bold; color: var(--main-color); text-align: center; }
         .stat-label { font-size: 13px; color: #888; text-align: center; margin-bottom: 5px; }
 
-        .progress-bar { height: 10px; background: var(--border-pink); border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        .progress-bar { height: 10px; background: var(--border-color); border-radius: 5px; margin-top: 10px; overflow: hidden; }
         #progressFill { height: 100%; background: var(--main-color); width: 0%; transition: 1s ease-out; }
 
-        .export-btn { width: 100%; padding: 12px; background-color: #ffccd5; border: none; border-radius: 20px; color: #d63384; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .export-btn { width: 100%; padding: 12px; background-color: var(--border-color); border: none; border-radius: 20px; color: var(--main-color); font-weight: bold; cursor: pointer; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th { color: var(--main-color); padding: 12px; border-bottom: 2px solid var(--border-pink); }
+        th { color: var(--main-color); padding: 12px; border-bottom: 2px solid var(--border-color); }
         td { padding: 12px; border-bottom: 1px solid #fceef0; text-align: center; }
         .danger-row { background-color: #fff0f3; color: #d63384; }
         .del-btn { cursor: pointer; color: var(--main-color); font-size: 18px; }
@@ -77,8 +104,6 @@
             }
 
             const sortedData = [...data].reverse();
-            
-            // 提醒邏輯
             const today = new Date().toISOString().split('T')[0];
             if (!data.some(row => row.record_date === today)) {
                 document.getElementById('reminderBox').style.display = 'block';
@@ -104,17 +129,17 @@
                 </tr>
             `).join('');
 
+            // 自動抓取 CSS 變數作為圖表顏色
+            const mainColor = getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim();
             new Chart(document.getElementById('myChart'), {
                 type: 'line',
                 data: {
                     labels: sortedData.map(r => r.record_date),
                     datasets: [
-                        { label: '收縮壓', data: sortedData.map(r => r.systolic), borderColor: '#ff758c', tension: 0.4 },
-                        { label: '舒張壓', data: sortedData.map(r => r.diastolic), borderColor: '#ffd700', tension: 0.4 },
+                        { label: '收縮壓', data: sortedData.map(r => r.systolic), borderColor: mainColor, tension: 0.4 },
                         { label: '心跳', data: sortedData.map(r => r.heart_rate), borderColor: '#75d6ff', tension: 0.4 }
                     ]
-                },
-                options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                }
             });
         }
 
@@ -133,7 +158,6 @@
 
         async function deleteRecord(id) {
             if(confirm("確定刪除此筆紀錄？")) {
-                // 確保後端有對應的 app.delete 路由
                 await fetch(`/api/health/${id}`, { method: 'DELETE' });
                 location.reload();
             }
