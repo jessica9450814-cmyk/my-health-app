@@ -6,7 +6,6 @@
     <title>每日健康記錄 🌸</title>
     <style>
         /* 主題顏色定義 */
-        :root { --main-color: #ff758c; --light-bg: #fdf6f7; --border-color: #ffe4e6; }
         .theme-pink { --main-color: #ff758c; --light-bg: #fdf6f7; --border-color: #ffe4e6; }
         .theme-blue { --main-color: #3498db; --light-bg: #eaf2f8; --border-color: #d1e8f9; }
         .theme-green { --main-color: #27ae60; --light-bg: #eafaf1; --border-color: #d5f5e3; }
@@ -16,27 +15,28 @@
         .container { max-width: 450px; margin: auto; background: #ffffff; padding: 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
         h2 { text-align: center; color: var(--main-color); font-size: 26px; margin-bottom: 20px; }
 
-        /* 主題切換按鈕 */
+        /* 圓形主題按鈕 */
         .theme-selector { text-align: center; margin-bottom: 20px; }
-        .theme-btn { border: none; padding: 5px 10px; cursor: pointer; border-radius: 15px; margin: 2px; font-size: 12px; color: white; }
+        .theme-btn { border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; margin: 0 5px; border: 2px solid #ddd; transition: 0.3s; }
+        .theme-btn:hover { transform: scale(1.2); }
 
         .group-title { font-size: 14px; color: #999; margin-bottom: 10px; margin-top: 20px; font-weight: bold; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
         input, select { padding: 15px; font-size: 16px; width: 100%; box-sizing: border-box; border: 2px solid var(--border-color); border-radius: 15px; background-color: #fff9fa; }
         
-        button { width: 100%; padding: 15px; font-size: 18px; background-color: var(--main-color); color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 25px; transition: 0.3s; }
-        button:hover { opacity: 0.8; }
+        button[type="submit"] { width: 100%; padding: 15px; font-size: 18px; background-color: var(--main-color); color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 25px; transition: 0.3s; }
+        button[type="submit"]:hover { opacity: 0.8; }
         .nav-link { display: block; text-align: center; margin-top: 20px; color: var(--main-color); text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="theme-selector">
-            <button class="theme-btn" style="background:#ff758c" onclick="changeTheme('theme-pink')">粉紅</button>
-            <button class="theme-btn" style="background:#3498db" onclick="changeTheme('theme-blue')">海洋藍</button>
-            <button class="theme-btn" style="background:#27ae60" onclick="changeTheme('theme-green')">森林綠</button>
-            <button class="theme-btn" style="background:#9b59b6" onclick="changeTheme('theme-purple')">質感紫</button>
+            <button class="theme-btn" style="background:#ff758c" onclick="changeTheme('theme-pink')"></button>
+            <button class="theme-btn" style="background:#3498db" onclick="changeTheme('theme-blue')"></button>
+            <button class="theme-btn" style="background:#27ae60" onclick="changeTheme('theme-green')"></button>
+            <button class="theme-btn" style="background:#9b59b6" onclick="changeTheme('theme-purple')"></button>
         </div>
 
         <h2>🌸 每日健康記錄</h2>
@@ -68,7 +68,7 @@
     </div>
 
     <script>
-        // 套用儲存的主題
+        // 初始化主題顏色
         document.body.className = localStorage.getItem('theme') || 'theme-pink';
 
         function changeTheme(themeName) {
