@@ -34,7 +34,6 @@
         th { color: var(--main-color); padding: 12px; border-bottom: 2px solid var(--border-color); }
         td { padding: 12px; border-bottom: 1px solid #fceef0; text-align: center; }
         .danger-row { background-color: #fff0f3; color: #d63384; }
-        .del-btn { cursor: pointer; color: var(--main-color); font-size: 18px; }
     </style>
 </head>
 
@@ -72,7 +71,7 @@
             <div class="section-title">趨勢分析</div>
             <canvas id="myChart" style="max-height: 250px;"></canvas>
             <table>
-                <thead><tr><th>日期</th><th>血壓</th><th>心跳</th><th>管理</th></tr></thead>
+                <thead><tr><th>日期</th><th>血壓</th><th>心跳</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -81,7 +80,6 @@
     </div>
 
     <script>
-       <script>
         document.body.className = localStorage.getItem('theme') || 'theme-pink';
 
         function changeTheme(themeName) {
@@ -92,28 +90,25 @@
 
         async function initDashboard() {
             const res = await fetch('/api/health');
-            let data = await res.json();
+            const data = await res.json();
             if (data.length === 0) {
                 document.getElementById('medicineStatus').textContent = "尚無紀錄";
                 return;
             }
 
-            // 1. 強制依照日期由近到遠排序
-            data.sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
+            const sortedData = [...data].reverse();
+            
+            document.getElementById('advicePlaceholder').innerHTML = `<div class="advice-card">${generateAdvice(sortedData[0])}</div>`;
 
-            // 2. 顯示建議
-            document.getElementById('advicePlaceholder').innerHTML = `<div class="advice-card">${generateAdvice(data[0])}</div>`;
-
-            // 3. 檢查今天紀錄
             const today = new Date().toISOString().split('T')[0];
             if (!data.some(row => row.record_date === today)) {
                 document.getElementById('reminderBox').style.display = 'block';
                 document.getElementById('reminderBox').innerHTML = `🔔 提醒：您今天尚未輸入紀錄喔！`;
             }
 
-            document.getElementById('lastSys').textContent = data[0].systolic;
-            document.getElementById('lastHr').textContent = data[0].heart_rate;
-            if (data[0].systolic > 130) {
+            document.getElementById('lastSys').textContent = sortedData[0].systolic;
+            document.getElementById('lastHr').textContent = sortedData[0].heart_rate;
+            if (sortedData[0].systolic > 130) {
                 document.getElementById('alertBox').style.display = 'block';
                 document.getElementById('alertBox').innerHTML = `⚠️ 注意：最新收縮壓偏高，請多留意！`;
             }
@@ -121,28 +116,23 @@
             updateMedicineStatus(data);
 
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = data.map(row => {
-                // 【偵錯修改】判斷 ID 欄位名稱
-                const recordId = row.id || row._id; 
-                return `
+            tbody.innerHTML = sortedData.map(row => `
                 <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
                     <td>${row.record_date}</td>
                     <td>${row.systolic}/${row.diastolic}</td>
                     <td>${row.heart_rate}</td>
-                    <td><span class="del-btn" onclick="deleteRecord('${recordId}')">🗑️</span></td>
-                </tr>`;
-            }).join('');
+                </tr>
+            `).join('');
 
-            const chartData = [...data].reverse();
             const mainColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
             new Chart(document.getElementById('myChart'), {
                 type: 'line',
                 data: {
-                    labels: chartData.map(r => r.record_date),
+                    labels: sortedData.map(r => r.record_date),
                     datasets: [
-                        { label: '收縮壓', data: chartData.map(r => r.systolic), borderColor: mainColor, tension: 0.4 },
-                        { label: '舒張壓', data: chartData.map(r => r.diastolic), borderColor: '#f39c12', tension: 0.4 },
-                        { label: '心跳', data: chartData.map(r => r.heart_rate), borderColor: '#75d6ff', tension: 0.4 }
+                        { label: '收縮壓', data: sortedData.map(r => r.systolic), borderColor: mainColor, tension: 0.4 },
+                        { label: '舒張壓', data: sortedData.map(r => r.diastolic), borderColor: '#f39c12', tension: 0.4 },
+                        { label: '心跳', data: sortedData.map(r => r.heart_rate), borderColor: '#75d6ff', tension: 0.4 }
                     ]
                 }
             });
@@ -174,22 +164,6 @@
             document.getElementById('progressFill').style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
         }
 
-        async function deleteRecord(id) {
-            console.log("正在刪除 ID:", id); // 開啟 F12 Console 可看到這行
-            if (!id || id === "undefined") {
-                alert("無法識別刪除標記，請檢查資料庫 ID 設定");
-                return;
-            }
-            if(confirm("確定刪除此筆紀錄？")) {
-                const res = await fetch(`/api/health/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    location.reload();
-                } else {
-                    alert("刪除失敗，請檢查 API 路徑是否正確");
-                }
-            }
-        }
-
         function exportToCSV() {
             fetch('/api/health').then(res => res.json()).then(data => {
                 let csv = "日期,收縮壓,舒張壓,心跳,服藥,症狀,排便\n";
@@ -203,3 +177,5 @@
         }
         initDashboard();
     </script>
+</body>
+</html>
