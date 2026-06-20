@@ -5,16 +5,20 @@
     <title>健康儀表板 🌸</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- 方案 B：主題類別設定 --- */
+        /* --- 主題類別設定 --- */
         .theme-pink { --main-color: #ff758c; --light-bg: #fdf6f7; --border-color: #ffe4e6; }
         .theme-blue { --main-color: #3498db; --light-bg: #eaf2f8; --border-color: #d1e8f9; }
         .theme-green { --main-color: #27ae60; --light-bg: #eafaf1; --border-color: #d5f5e3; }
         .theme-purple { --main-color: #9b59b6; --light-bg: #f4ecf7; --border-color: #e8daef; }
 
-        /* 預設樣式 (套用變數) */
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--light-bg); padding: 20px; color: #555; transition: 0.3s; }
         .container { max-width: 800px; margin: auto; }
         h2 { color: var(--main-color); text-align: center; margin-bottom: 25px; }
+
+        /* 主題切換按鈕區 */
+        .theme-selector { text-align: center; margin-bottom: 20px; }
+        .theme-btn { border: none; padding: 6px 12px; cursor: pointer; border-radius: 15px; margin: 3px; font-size: 13px; color: white; transition: 0.2s; }
+        .theme-btn:hover { opacity: 0.8; }
 
         .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border-color); }
         .section-title { font-size: 18px; color: var(--main-color); font-weight: bold; margin-bottom: 15px; border-left: 5px solid var(--main-color); padding-left: 10px; }
@@ -35,10 +39,16 @@
     </style>
 </head>
 
-<body class="theme-pink">
-
+<body>
     <div class="container">
         <h2>🌸 健康儀表板</h2>
+
+        <div class="theme-selector">
+            <button class="theme-btn" style="background:#ff758c;" onclick="changeTheme('theme-pink')">粉紅</button>
+            <button class="theme-btn" style="background:#3498db;" onclick="changeTheme('theme-blue')">海洋藍</button>
+            <button class="theme-btn" style="background:#27ae60;" onclick="changeTheme('theme-green')">森林綠</button>
+            <button class="theme-btn" style="background:#9b59b6;" onclick="changeTheme('theme-purple')">質感紫</button>
+        </div>
 
         <div class="section">
             <div class="section-title">狀況提醒</div>
@@ -70,6 +80,15 @@
     </div>
 
     <script>
+        // 設定初始主題
+        document.body.className = localStorage.getItem('theme') || 'theme-pink';
+
+        function changeTheme(themeName) {
+            document.body.className = themeName;
+            localStorage.setItem('theme', themeName);
+            location.reload(); 
+        }
+
         async function initDashboard() {
             const res = await fetch('/api/health');
             const data = await res.json();
@@ -104,7 +123,6 @@
                 </tr>
             `).join('');
 
-            // 自動取得當前 body class 對應的變數顏色
             const mainColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
             new Chart(document.getElementById('myChart'), {
                 type: 'line',
@@ -112,6 +130,7 @@
                     labels: sortedData.map(r => r.record_date),
                     datasets: [
                         { label: '收縮壓', data: sortedData.map(r => r.systolic), borderColor: mainColor, tension: 0.4 },
+                        { label: '舒張壓', data: sortedData.map(r => r.diastolic), borderColor: '#f39c12', tension: 0.4 },
                         { label: '心跳', data: sortedData.map(r => r.heart_rate), borderColor: '#75d6ff', tension: 0.4 }
                     ]
                 }
