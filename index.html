@@ -20,6 +20,10 @@
         .theme-btn { border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; margin: 0 5px; border: 2px solid #ddd; transition: 0.3s; }
         .theme-btn:hover { transform: scale(1.2); }
 
+        /* Toast 提示框樣式 */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 15px 30px; background: var(--main-color); color: white; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; display: none; font-weight: bold; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         .group-title { font-size: 14px; color: #999; margin-bottom: 10px; margin-top: 20px; font-weight: bold; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
@@ -31,6 +35,8 @@
     </style>
 </head>
 <body>
+    <div id="toast" class="toast">💖 資料已成功儲存！</div>
+    
     <div class="container">
         <div class="theme-selector">
             <button class="theme-btn" style="background:#ff758c" onclick="changeTheme('theme-pink')"></button>
@@ -96,10 +102,17 @@
                 body: JSON.stringify(data)
             });
             
-            const result = await response.json();
-            alert("💖 " + result.message);
-            document.getElementById('healthForm').reset();
-            document.getElementById('date').valueAsDate = new Date();
+            if (response.ok) {
+                // 顯示優雅的 Toast
+                const toast = document.getElementById('toast');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+                
+                document.getElementById('healthForm').reset();
+                document.getElementById('date').valueAsDate = new Date();
+            } else {
+                alert("儲存失敗，請再試一次");
+            }
         });
     </script>
 </body>
