@@ -81,6 +81,7 @@
     </div>
 
     <script>
+       <script>
         document.body.className = localStorage.getItem('theme') || 'theme-pink';
 
         function changeTheme(themeName) {
@@ -97,13 +98,13 @@
                 return;
             }
 
-            // 【關鍵修正】強制依照日期由近到遠排序
+            // 1. 強制依照日期由近到遠排序
             data.sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
 
-            // 顯示建議（使用最新的那一筆）
+            // 2. 顯示建議
             document.getElementById('advicePlaceholder').innerHTML = `<div class="advice-card">${generateAdvice(data[0])}</div>`;
 
-            // 檢查今天紀錄
+            // 3. 檢查今天紀錄
             const today = new Date().toISOString().split('T')[0];
             if (!data.some(row => row.record_date === today)) {
                 document.getElementById('reminderBox').style.display = 'block';
@@ -120,16 +121,18 @@
             updateMedicineStatus(data);
 
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = data.map(row => `
+            tbody.innerHTML = data.map(row => {
+                // 【偵錯修改】判斷 ID 欄位名稱
+                const recordId = row.id || row._id; 
+                return `
                 <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
                     <td>${row.record_date}</td>
                     <td>${row.systolic}/${row.diastolic}</td>
                     <td>${row.heart_rate}</td>
-                    <td><span class="del-btn" onclick="deleteRecord('${row.id}')">🗑️</span></td>
-                </tr>
-            `).join('');
+                    <td><span class="del-btn" onclick="deleteRecord('${recordId}')">🗑️</span></td>
+                </tr>`;
+            }).join('');
 
-            // 圖表顯示（圖表通常需要由舊到新展示才合理，所以 reverse）
             const chartData = [...data].reverse();
             const mainColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
             new Chart(document.getElementById('myChart'), {
@@ -172,10 +175,18 @@
         }
 
         async function deleteRecord(id) {
+            console.log("正在刪除 ID:", id); // 開啟 F12 Console 可看到這行
+            if (!id || id === "undefined") {
+                alert("無法識別刪除標記，請檢查資料庫 ID 設定");
+                return;
+            }
             if(confirm("確定刪除此筆紀錄？")) {
-                // 【關鍵修正】加上 await 等待刪除 API 完成
-                await fetch(`/api/health/${id}`, { method: 'DELETE' });
-                location.reload(); // 刪除完成後再重載頁面
+                const res = await fetch(`/api/health/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    alert("刪除失敗，請檢查 API 路徑是否正確");
+                }
             }
         }
 
@@ -192,5 +203,3 @@
         }
         initDashboard();
     </script>
-</body>
-</html>
