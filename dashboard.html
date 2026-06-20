@@ -5,30 +5,33 @@
     <title>健康儀表板 🌸</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #fdf6f7; padding: 20px; color: #555; }
+        /* 在這裡修改 --main-color 即可改變整個網站的主題色 */
+        :root {
+            --main-color: #ff758c;
+            --light-pink: #fdf6f7;
+            --border-pink: #ffe4e6;
+        }
+
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--light-pink); padding: 20px; color: #555; }
         .container { max-width: 800px; margin: auto; }
-        h2 { color: #ff758c; text-align: center; margin-bottom: 25px; }
+        h2 { color: var(--main-color); text-align: center; margin-bottom: 25px; }
 
-        .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.2); margin-bottom: 20px; border: 1px solid #ffe4e6; }
-        .section-title { font-size: 18px; color: #ff758c; font-weight: bold; margin-bottom: 15px; border-left: 5px solid #ff758c; padding-left: 10px; }
+        .section { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 182, 193, 0.2); margin-bottom: 20px; border: 1px solid var(--border-pink); }
+        .section-title { font-size: 18px; color: var(--main-color); font-weight: bold; margin-bottom: 15px; border-left: 5px solid var(--main-color); padding-left: 10px; }
 
-        .summary-card { display: flex; justify-content: space-around; background: #fff9fa; padding: 20px; border-radius: 20px; border: 1px solid #ffe4e6; }
-        .stat-value { font-size: 28px; font-weight: bold; color: #ff758c; text-align: center; }
+        .summary-card { display: flex; justify-content: space-around; background: #fff9fa; padding: 20px; border-radius: 20px; border: 1px solid var(--border-pink); }
+        .stat-value { font-size: 28px; font-weight: bold; color: var(--main-color); text-align: center; }
         .stat-label { font-size: 13px; color: #888; text-align: center; margin-bottom: 5px; }
 
-        .progress-bar { height: 10px; background: #ffe4e6; border-radius: 5px; margin-top: 10px; overflow: hidden; }
-        #progressFill { height: 100%; background: #ff758c; width: 0%; transition: 1s ease-out; }
-
-        .ai-box { background: #fff0f5; padding: 20px; border-radius: 20px; border: 1px dashed #ff758c; margin-top: 20px; }
-        input[type="text"] { width: 70%; padding: 10px; border-radius: 10px; border: 1px solid #ffccd5; }
-        button { padding: 10px 15px; background-color: #ff758c; color: white; border: none; border-radius: 10px; cursor: pointer; }
+        .progress-bar { height: 10px; background: var(--border-pink); border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        #progressFill { height: 100%; background: var(--main-color); width: 0%; transition: 1s ease-out; }
 
         .export-btn { width: 100%; padding: 12px; background-color: #ffccd5; border: none; border-radius: 20px; color: #d63384; font-weight: bold; cursor: pointer; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th { color: #ff758c; padding: 12px; border-bottom: 2px solid #ffe4e6; }
+        th { color: var(--main-color); padding: 12px; border-bottom: 2px solid var(--border-pink); }
         td { padding: 12px; border-bottom: 1px solid #fceef0; text-align: center; }
         .danger-row { background-color: #fff0f3; color: #d63384; }
-        .del-btn { cursor: pointer; color: #ff758c; font-size: 18px; }
+        .del-btn { cursor: pointer; color: var(--main-color); font-size: 18px; }
     </style>
 </head>
 <body>
@@ -47,16 +50,8 @@
 
         <div class="section">
             <div class="section-title">服藥進度</div>
-            <div id="medicineStatus" style="font-size: 14px; font-weight: bold; color: #ff758c;">載入中...</div>
+            <div id="medicineStatus" style="font-size: 14px; font-weight: bold; color: var(--main-color);">正在載入數據...</div>
             <div class="progress-bar"><div id="progressFill"></div></div>
-            
-            <div class="ai-box">
-                <div class="section-title" style="font-size: 16px;">🤖 AI 健康諮詢助手</div>
-                <input type="text" id="aiInput" placeholder="例如：血壓 140/90 該注意什麼？">
-                <button onclick="askAI()">詢問</button>
-                <p id="aiReply" style="margin-top: 10px; font-size: 14px; color: #d63384;"></p>
-            </div>
-
             <button class="export-btn" onclick="exportToCSV()">📥 匯出健康報表 (CSV)</button>
         </div>
 
@@ -73,26 +68,13 @@
     </div>
 
     <script>
-        // AI 呼叫函數
-        async function askAI() {
-            const input = document.getElementById('aiInput').value;
-            const reply = document.getElementById('aiReply');
-            if (!input) return;
-            
-            reply.innerText = "AI 正在分析中，請稍候...";
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input })
-            });
-            const data = await res.json();
-            reply.innerText = data.reply || data.error;
-        }
-
         async function initDashboard() {
             const res = await fetch('/api/health');
             const data = await res.json();
-            if (data.length === 0) return;
+            if (data.length === 0) {
+                document.getElementById('medicineStatus').textContent = "尚無紀錄";
+                return;
+            }
 
             const sortedData = [...data].reverse();
             
@@ -102,6 +84,7 @@
                 document.getElementById('reminderBox').style.display = 'block';
                 document.getElementById('reminderBox').innerHTML = `🔔 提醒：您今天尚未輸入紀錄喔！`;
             }
+
             document.getElementById('lastSys').textContent = sortedData[0].systolic;
             document.getElementById('lastHr').textContent = sortedData[0].heart_rate;
             if (sortedData[0].systolic > 130) {
@@ -150,6 +133,7 @@
 
         async function deleteRecord(id) {
             if(confirm("確定刪除此筆紀錄？")) {
+                // 確保後端有對應的 app.delete 路由
                 await fetch(`/api/health/${id}`, { method: 'DELETE' });
                 location.reload();
             }
