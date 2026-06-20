@@ -1,4 +1,4 @@
--require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
@@ -7,18 +7,18 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 讀取金鑰，若讀不到會直接在 Log 報錯
+// 1. 強制確保 apiKey 存在
 const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) console.error("【關鍵錯誤】環境變數 GEMINI_API_KEY 未找到！");
 
-const genAI = new GoogleGenerativeAI(apiKey || "INVALID_KEY");
+// 2. 初始化 Gemini
+const genAI = new GoogleGenerativeAI(apiKey || "MISSING_KEY");
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname))); 
+app.use(express.static(path.join(__dirname)));
 
 const db = new sqlite3.Database(path.join(__dirname, 'health_data.db'));
 
-// 資料庫初始化
+// 初始化資料庫
 db.run(`CREATE TABLE IF NOT EXISTS health_records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     record_date DATE NOT NULL,
@@ -35,37 +35,26 @@ db.run(`CREATE TABLE IF NOT EXISTS health_records (
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 
-// API 區塊
-app.post('/api/health', (req, res) => {
-    const { date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement } = req.body;
-    db.run(`INSERT INTO health_records (record_date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
-    [date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: this.lastID });
-    });
-});
-
-app.get('/api/health', (req, res) => {
-    db.all("SELECT * FROM health_records ORDER BY record_date DESC", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-// AI API：改用 gemini-1.5-flash，並確保路徑完整
+// --- AI 諮詢 API (診斷模式) ---
 app.post('/api/chat', async (req, res) => {
     const { message } = req.body;
+    
+    // 診斷檢查
+    if (!apiKey) return res.status(500).json({ error: "伺服器環境變數未偵測到 GEMINI_API_KEY" });
+
     try {
-        if (!apiKey) throw new Error("API Key 未設定");
-        
+        // 使用 gemini-1.5-flash
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(message);
-        const response = await result.response;
-        res.json({ reply: response.text() });
+        res.json({ reply: result.response.text() });
     } catch (error) {
-        // 這會輸出詳細的錯誤資訊，請檢查 Render 的 Logs
-        console.error("【Gemini API Error Detail】:", error);
-        res.status(500).json({ error: `API 呼叫失敗: ${error.message}` });
+        // 直接將 Google 回傳的錯誤完整回傳給前端，方便你判斷
+        console.error("【詳細錯誤】:", error);
+        res.status(500).json({ 
+            error: "Gemini API 拒絕回應", 
+            details: error.message,
+            hint: "若錯誤為 404，請確認此 API Key 是否已於 Google AI Studio 正確啟動" 
+        });
     }
 });
 
