@@ -171,22 +171,26 @@
         }
 
         async function deleteRecord(id) {
-            if(confirm("確定刪除此筆紀錄？")) {
-                try {
-                    const response = await fetch(`/api/health/${id}`, { method: 'DELETE' });
-                    if (response.ok) {
-                        alert("刪除成功！");
-                        location.reload();
-                    } else {
-                        alert("刪除失敗，請檢查 API 路徑或 ID。");
-                    }
-                } catch (error) {
-                    console.error("刪除錯誤:", error);
-                }
-            }
-        }
+    console.log("嘗試刪除的 ID 值為:", id); // 在 F12 Console 查看此訊息
+    
+    if (!id || id === "undefined") {
+        alert("錯誤：無法獲取 ID，請確認資料結構！");
+        return;
+    }
 
-        function exportToCSV() {
+    if(confirm("確定刪除此筆紀錄？")) {
+        try {
+            const response = await fetch(`/api/health/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert("伺服器刪除失敗，請檢查後端路由路徑是否對應正確。");
+            }
+        } catch (error) {
+            console.error("網路請求錯誤:", error);
+        }
+    }
+}
             fetch('/api/health').then(res => res.json()).then(data => {
                 let csv = "日期,收縮壓,舒張壓,心跳,服藥,症狀,排便\n";
                 data.forEach(r => csv += `${r.record_date},${r.systolic},${r.diastolic},${r.heart_rate},${r.took_medicine},${r.discomfort},${r.bowel_movement}\n`);
