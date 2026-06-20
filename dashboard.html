@@ -5,41 +5,14 @@
     <title>健康儀表板 🌸</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- 主題顏色設定 --- */
-        /* 若要更換顏色，請將你想要的顏色區塊註解移開，並註解掉其他的 */
+        /* --- 方案 B：主題類別設定 --- */
+        .theme-pink { --main-color: #ff758c; --light-bg: #fdf6f7; --border-color: #ffe4e6; }
+        .theme-blue { --main-color: #3498db; --light-bg: #eaf2f8; --border-color: #d1e8f9; }
+        .theme-green { --main-color: #27ae60; --light-bg: #eafaf1; --border-color: #d5f5e3; }
+        .theme-purple { --main-color: #9b59b6; --light-bg: #f4ecf7; --border-color: #e8daef; }
 
-        /* 1. 🌸 預設粉紅 */
-        :root {
-            --main-color: #ff758c;
-            --light-bg: #fdf6f7;
-            --border-color: #ffe4e6;
-        }
-
-        /* 2. 🌊 海洋藍 
-        :root {
-            --main-color: #3498db;
-            --light-bg: #eaf2f8;
-            --border-color: #d1e8f9;
-        }
-        */
-
-        /* 3. 🌿 森林綠 
-        :root {
-            --main-color: #27ae60;
-            --light-bg: #eafaf1;
-            --border-color: #d5f5e3;
-        }
-        */
-
-        /* 4. 💜 質感紫 
-        :root {
-            --main-color: #9b59b6;
-            --light-bg: #f4ecf7;
-            --border-color: #e8daef;
-        }
-        */
-
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--light-bg); padding: 20px; color: #555; }
+        /* 預設樣式 (套用變數) */
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--light-bg); padding: 20px; color: #555; transition: 0.3s; }
         .container { max-width: 800px; margin: auto; }
         h2 { color: var(--main-color); text-align: center; margin-bottom: 25px; }
 
@@ -61,7 +34,9 @@
         .del-btn { cursor: pointer; color: var(--main-color); font-size: 18px; }
     </style>
 </head>
-<body>
+
+<body class="theme-pink">
+
     <div class="container">
         <h2>🌸 健康儀表板</h2>
 
@@ -129,8 +104,8 @@
                 </tr>
             `).join('');
 
-            // 自動抓取 CSS 變數作為圖表顏色
-            const mainColor = getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim();
+            // 自動取得當前 body class 對應的變數顏色
+            const mainColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
             new Chart(document.getElementById('myChart'), {
                 type: 'line',
                 data: {
@@ -154,6 +129,7 @@
             const pct = total > 0 ? (taken / total) * 100 : 0;
             document.getElementById('medicineStatus').textContent = `本月已記錄 ${total} 天，共 ${taken} 天服藥`;
             document.getElementById('progressFill').style.width = pct + "%";
+            document.getElementById('progressFill').style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
         }
 
         async function deleteRecord(id) {
