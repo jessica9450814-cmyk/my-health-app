@@ -7,11 +7,7 @@ const app = express();
 // Render 必須使用 process.env.PORT，若沒設定則預設 10000
 // 請務必寫成這樣，確保 Render 可以正確抓取 Port
 const PORT = process.env.PORT || 10000;
-
-app.use(express.json());
-// 確保靜態檔案路徑指向目前目錄
-app.use(express.static(__dirname));
-
+app.listen(PORT, '0.0.0.0', () => console.log(`Server started on port ${PORT}`));
 // 強制使用絕對路徑，解決不同環境下的路徑錯位問題
 // 修改這一段
 const dbPath = path.join(__dirname, 'health_data.db'); // 強制指定目錄下的這個檔案
