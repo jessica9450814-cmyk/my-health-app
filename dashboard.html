@@ -56,55 +56,55 @@
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
+
+        <a href="/" style="display: block; text-align: center; color: #aaa; text-decoration: none; font-size: 14px; margin-bottom: 30px;">← 回到輸入頁面</a>
     </div>
 
     <script>
         document.body.className = localStorage.getItem('theme') || 'theme-pink';
         
         async function initDashboard() {
-            const res = await fetch('/api/health');
-            const data = await res.json();
-            if (data.length === 0) return;
-            const sorted = [...data].reverse();
-            
-            // 1. 健康分析與狀況提醒
-            document.getElementById('advicePlaceholder').innerHTML = `<div class="advice-card">${generateAdvice(sorted[0])}</div>`;
-            const today = new Date().toISOString().split('T')[0];
-            if (!data.some(r => r.record_date === today)) {
-                document.getElementById('reminderBox').style.display = 'block';
-                document.getElementById('reminderBox').innerHTML = "🔔 提醒：您今天尚未輸入紀錄喔！";
-            }
-            document.getElementById('lastSys').textContent = sorted[0].systolic;
-            document.getElementById('lastHr').textContent = sorted[0].heart_rate;
-
-            // 2. 表格與刪除
-            document.getElementById('tableBody').innerHTML = sorted.map(r => `<tr>
-                <td>${r.record_date}</td><td>${r.systolic}/${r.diastolic}</td><td>${r.heart_rate}</td>
-                <td><span class="del-btn" onclick="deleteRecord(${r.id})">🗑️</span></td>
-            </tr>`).join('');
-
-            // 3. 服藥進度
-            const taken = data.filter(r => r.took_medicine == 1).length;
-            document.getElementById('medicineStatus').textContent = `本月已記錄 ${data.length} 天，共 ${taken} 天服藥`;
-            document.getElementById('progressFill').style.width = (data.length ? (taken/data.length)*100 : 0) + "%";
-
-            // 4. 圖表 (收縮壓、舒張壓、心跳)
-            new Chart(document.getElementById('myChart'), {
-                type: 'line',
-                data: {
-                    labels: sorted.map(r => r.record_date),
-                    datasets: [
-                        { label: '收縮壓', data: sorted.map(r => r.systolic), borderColor: '#ff758c', tension: 0.3 },
-                        { label: '舒張壓', data: sorted.map(r => r.diastolic), borderColor: '#f39c12', tension: 0.3 },
-                        { label: '心跳', data: sorted.map(r => r.heart_rate), borderColor: '#3498db', tension: 0.3 }
-                    ]
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                if (data.length === 0) return;
+                const sorted = [...data].reverse();
+                
+                document.getElementById('advicePlaceholder').innerHTML = `<div class="advice-card">${generateAdvice(sorted[0])}</div>`;
+                const today = new Date().toISOString().split('T')[0];
+                if (!data.some(r => r.record_date === today)) {
+                    document.getElementById('reminderBox').style.display = 'block';
+                    document.getElementById('reminderBox').innerHTML = "🔔 提醒：您今天尚未輸入紀錄喔！";
                 }
-            });
+                document.getElementById('lastSys').textContent = sorted[0].systolic;
+                document.getElementById('lastHr').textContent = sorted[0].heart_rate;
+
+                document.getElementById('tableBody').innerHTML = sorted.map(r => `<tr>
+                    <td>${r.record_date}</td><td>${r.systolic}/${r.diastolic}</td><td>${r.heart_rate}</td>
+                    <td><span class="del-btn" onclick="deleteRecord(${r.id})">🗑️</span></td>
+                </tr>`).join('');
+
+                const taken = data.filter(r => r.took_medicine == 1).length;
+                document.getElementById('medicineStatus').textContent = `本月共 ${taken} 天服藥`;
+                document.getElementById('progressFill').style.width = (data.length ? (taken/data.length)*100 : 0) + "%";
+
+                new Chart(document.getElementById('myChart'), {
+                    type: 'line',
+                    data: {
+                        labels: sorted.map(r => r.record_date),
+                        datasets: [
+                            { label: '收縮壓', data: sorted.map(r => r.systolic), borderColor: '#ff758c' },
+                            { label: '舒張壓', data: sorted.map(r => r.diastolic), borderColor: '#f39c12' },
+                            { label: '心跳', data: sorted.map(r => r.heart_rate), borderColor: '#3498db' }
+                        ]
+                    }
+                });
+            } catch (err) { console.error(err); }
         }
 
         function generateAdvice(r) {
             let s = "<h3>🩺 健康分析小提醒</h3><ul>";
-            s += r.systolic > 140 ? "<li><b>血壓偏高：</b>建議減少鈉攝取，多休息。</li>" : "<li><b>血壓穩定：</b>請繼續保持規律作息。</li>";
+            s += r.systolic > 140 ? "<li><b>血壓偏高：</b>建議減少鈉攝取，多休息。</li>" : "<li><b>血壓狀況穩定。</b></li>";
             s += r.heart_rate > 100 ? "<li><b>心跳偏快：</b>請多深呼吸並放鬆。</li>" : "";
             s += r.took_medicine == 0 ? "<li><b>用藥提醒：</b>請檢查今日是否忘記服藥。</li>" : "";
             return s + "</ul>";
@@ -114,6 +114,7 @@
             if(!confirm("確定刪除此筆紀錄嗎？")) return;
             const res = await fetch(`/api/health/${id}`, { method: 'DELETE' });
             if (res.ok) location.reload();
+            else alert("刪除失敗");
         }
 
         function exportToCSV() {
