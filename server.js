@@ -5,16 +5,22 @@ const path = require('path');
 
 const app = express();
 // Render 必須使用 process.env.PORT，若沒設定則預設 10000
+// 請務必寫成這樣，確保 Render 可以正確抓取 Port
 const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname))); 
+// 確保靜態檔案路徑指向目前目錄
+app.use(express.static(__dirname));
 
 // 強制使用絕對路徑，解決不同環境下的路徑錯位問題
-const dbPath = path.resolve(__dirname, 'health_data.db');
+// 修改這一段
+const dbPath = path.join(__dirname, 'health_data.db'); // 強制指定目錄下的這個檔案
 const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error("資料庫連線失敗:", err.message);
-    else console.log("資料庫已連接，檔案位置:", dbPath);
+    if (err) {
+        console.error("❌ 連線失敗:", err.message);
+    } else {
+        console.log("✅ 成功連接到:", dbPath);
+    }
 });
 
 // 初始化資料庫 (確保表名為 health_data)
@@ -72,6 +78,5 @@ app.delete('/api/health/:id', (req, res) => {
 
 // 啟動伺服器
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`環境變數 PORT: ${process.env.PORT}`);
-    console.log(`伺服器已啟動於 0.0.0.0:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
