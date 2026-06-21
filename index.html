@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>每日健康記錄 🌸</title>
     <style>
-        /* 主題顏色定義 */
         .theme-pink { --main-color: #ff758c; --light-bg: #fdf6f7; --border-color: #ffe4e6; }
         .theme-blue { --main-color: #3498db; --light-bg: #eaf2f8; --border-color: #d1e8f9; }
         .theme-green { --main-color: #27ae60; --light-bg: #eafaf1; --border-color: #d5f5e3; }
@@ -14,79 +13,45 @@
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--light-bg); padding: 20px; line-height: 1.6; color: #555; transition: 0.3s; }
         .container { max-width: 450px; margin: auto; background: #ffffff; padding: 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
         h2 { text-align: center; color: var(--main-color); font-size: 26px; margin-bottom: 20px; }
-
-        /* 圓形主題按鈕 */
         .theme-selector { text-align: center; margin-bottom: 20px; }
         .theme-btn { border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; margin: 0 5px; border: 2px solid #ddd; transition: 0.3s; }
-        .theme-btn:hover { transform: scale(1.2); }
-
-        /* Toast 提示框樣式 */
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 15px 30px; background: var(--main-color); color: white; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; display: none; font-weight: bold; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .group-title { font-size: 14px; color: #999; margin-bottom: 10px; margin-top: 20px; font-weight: bold; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 15px 30px; background: var(--main-color); color: white; border-radius: 50px; display: none; z-index: 1000; font-weight: bold; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        input, select { padding: 15px; font-size: 16px; width: 100%; box-sizing: border-box; border: 2px solid var(--border-color); border-radius: 15px; background-color: #fff9fa; }
-        
-        button[type="submit"] { width: 100%; padding: 15px; font-size: 18px; background-color: var(--main-color); color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 25px; transition: 0.3s; }
-        button[type="submit"]:hover { opacity: 0.8; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { padding: 15px; font-size: 16px; width: 100%; box-sizing: border-box; border: 2px solid var(--border-color); border-radius: 15px; }
+        button[type="submit"] { width: 100%; padding: 15px; background-color: var(--main-color); color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 25px; }
         .nav-link { display: block; text-align: center; margin-top: 20px; color: var(--main-color); text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="toast" class="toast">💖 資料已成功儲存！</div>
-    
     <div class="container">
-        <div class="theme-selector">
-            <button class="theme-btn" style="background:#ff758c" onclick="changeTheme('theme-pink')"></button>
-            <button class="theme-btn" style="background:#3498db" onclick="changeTheme('theme-blue')"></button>
-            <button class="theme-btn" style="background:#27ae60" onclick="changeTheme('theme-green')"></button>
-            <button class="theme-btn" style="background:#9b59b6" onclick="changeTheme('theme-purple')"></button>
-        </div>
-
         <h2>🌸 每日健康記錄</h2>
         <form id="healthForm">
-            <div class="group-title">日期</div>
-            <div class="form-group"><input type="date" id="date" required></div>
-
-            <div class="group-title">生命徵象</div>
+            <div class="form-group"><label>日期</label><input type="date" id="date" required></div>
             <div style="display: flex; gap: 10px;">
-                <div class="form-group" style="flex: 1;"><label>收縮壓</label><input type="number" id="systolic" placeholder="mmHg" required></div>
-                <div class="form-group" style="flex: 1;"><label>舒張壓</label><input type="number" id="diastolic" placeholder="mmHg" required></div>
+                <div class="form-group"><label>收縮壓</label><input type="number" id="systolic" placeholder="mmHg" required></div>
+                <div class="form-group"><label>舒張壓</label><input type="number" id="diastolic" placeholder="mmHg" required></div>
             </div>
             <div class="form-group"><label>心跳</label><input type="number" id="heart_rate" placeholder="bpm" required></div>
-
-            <div class="group-title">紀錄</div>
-            <div class="form-group">
-                <label>今日服藥</label>
-                <select id="took_medicine">
-                    <option value="1">有服藥</option>
-                    <option value="0">無服藥</option>
-                </select>
+            <div class="form-group"><label>今日服藥</label>
+                <select id="took_medicine"><option value="1">有服藥</option><option value="0">無服藥</option></select>
             </div>
             <div class="form-group"><label>不適症狀</label><input type="text" id="discomfort" placeholder="若無可留空"></div>
-            <div class="form-group"><label>排便狀況</label><input type="text" id="bowel_movement" placeholder="例：正常、便秘"></div>
-
+            <div class="form-group"><label>排便狀況</label><input type="text" id="bowel_movement" placeholder="例：正常"></div>
             <button type="submit">送出資料</button>
         </form>
         <a href="/dashboard" class="nav-link">前往查看儀表板 →</a>
     </div>
 
     <script>
-        // 初始化主題顏色
         document.body.className = localStorage.getItem('theme') || 'theme-pink';
-
-        function changeTheme(themeName) {
-            document.body.className = themeName;
-            localStorage.setItem('theme', themeName);
-        }
-
+        function changeTheme(t) { document.body.className = t; localStorage.setItem('theme', t); }
         document.getElementById('date').valueAsDate = new Date();
 
         document.getElementById('healthForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
+            const payload = {
                 date: document.getElementById('date').value,
                 systolic: document.getElementById('systolic').value,
                 diastolic: document.getElementById('diastolic').value,
@@ -96,22 +61,25 @@
                 bowel_movement: document.getElementById('bowel_movement').value || "無"
             };
             
-            const response = await fetch('/api/health', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            if (response.ok) {
-                // 顯示優雅的 Toast
-                const toast = document.getElementById('toast');
-                toast.style.display = 'block';
-                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            try {
+                // 明確使用 /api/health，這是後端路由的路徑
+                const res = await fetch('/api/health', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
                 
-                document.getElementById('healthForm').reset();
-                document.getElementById('date').valueAsDate = new Date();
-            } else {
-                alert("儲存失敗，請再試一次");
+                if (res.ok) {
+                    const toast = document.getElementById('toast');
+                    toast.style.display = 'block';
+                    setTimeout(() => { toast.style.display = 'none'; }, 2000);
+                    document.getElementById('healthForm').reset();
+                    document.getElementById('date').valueAsDate = new Date();
+                } else {
+                    alert("儲存失敗，請檢查伺服器狀態");
+                }
+            } catch (err) {
+                alert("連線錯誤，請確認伺服器是否正常啟動");
             }
         });
     </script>
