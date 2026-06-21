@@ -24,9 +24,20 @@ db.run(`CREATE TABLE IF NOT EXISTS health_records (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
+// --- 路由 ---
+
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 
+// 讀取資料
+app.get('/api/health', (req, res) => {
+    db.all("SELECT * FROM health_records ORDER BY record_date DESC", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// 新增資料
 app.post('/api/health', (req, res) => {
     const { date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement } = req.body;
     db.run(`INSERT INTO health_records (record_date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
@@ -36,10 +47,17 @@ app.post('/api/health', (req, res) => {
     });
 });
 
-app.get('/api/health', (req, res) => {
-    db.all("SELECT * FROM health_records ORDER BY record_date DESC", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
+// 【重點修正】：新增 DELETE 路由
+app.delete('/api/health/:id', (req, res) => {
+    const { id } = req.params;
+    db.run(`DELETE FROM health_records WHERE id = ?`, id, function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "找不到該筆資料" });
+        }
+        res.status(200).json({ message: "刪除成功" });
     });
 });
 
