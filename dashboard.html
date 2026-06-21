@@ -104,9 +104,20 @@
 
         function generateAdvice(r) {
             let s = "<h3>🩺 健康分析小提醒</h3><ul>";
-            s += r.systolic > 140 ? "<li><b>血壓偏高：</b>建議減少鈉攝取，多休息。</li>" : "<li><b>血壓狀況穩定。</b></li>";
+            
+            // 修改判斷邏輯，增加過低的判斷
+            if (r.systolic > 140) {
+                s += "<li><b>血壓偏高：</b>建議減少鈉攝取，多休息。</li>";
+            } else if (r.systolic < 90) {
+                s += "<li><b>血壓偏低：</b>請注意是否有頭暈現象，建議諮詢醫師。</li>";
+            } else {
+                s += "<li><b>血壓狀況穩定。</b></li>";
+            }
+
             s += r.heart_rate > 100 ? "<li><b>心跳偏快：</b>請多深呼吸並放鬆。</li>" : "";
+            s += r.heart_rate < 60 ? "<li><b>心跳偏慢：</b>請注意身體是否有無力感。</li>" : "";
             s += r.took_medicine == 0 ? "<li><b>用藥提醒：</b>請檢查今日是否忘記服藥。</li>" : "";
+            
             return s + "</ul>";
         }
 
