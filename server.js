@@ -9,10 +9,15 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); 
 
-const db = new sqlite3.Database(path.join(__dirname, 'health_data.db'));
+// 使用絕對路徑
+const dbPath = path.join(process.cwd(), 'health_data.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) console.error("資料庫連線失敗:", err.message);
+    else console.log("資料庫已連接，儲存位置:", dbPath);
+});
 
-// 初始化資料庫
-db.run(`CREATE TABLE IF NOT EXISTS health_records (
+// 初始化資料庫 (確保表名為 health_data)
+db.run(`CREATE TABLE IF NOT EXISTS health_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     record_date DATE NOT NULL,
     systolic INTEGER NOT NULL,
@@ -25,40 +30,37 @@ db.run(`CREATE TABLE IF NOT EXISTS health_records (
 )`);
 
 // --- 路由 ---
-
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 
-// 讀取資料
+// 讀取資料 (對接 health_data 表)
 app.get('/api/health', (req, res) => {
-    db.all("SELECT * FROM health_records ORDER BY record_date DESC", [], (err, rows) => {
+    db.all("SELECT * FROM health_data ORDER BY record_date DESC", [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
 
-// 新增資料
+// 新增資料 (對接 health_data 表)
 app.post('/api/health', (req, res) => {
     const { date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement } = req.body;
-    db.run(`INSERT INTO health_records (record_date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
-    [date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+    const sql = `INSERT INTO health_data (record_date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    
+    db.run(sql, [date, systolic, diastolic, heart_rate, took_medicine, discomfort, bowel_movement], function(err) {
+        if (err) {
+            console.error("寫入失敗:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
         res.status(201).json({ id: this.lastID });
     });
 });
 
-// 【重點修正】：新增 DELETE 路由
+// 刪除路由 (對接 health_data 表)
 app.delete('/api/health/:id', (req, res) => {
-    const { id } = req.params;
-    db.run(`DELETE FROM health_records WHERE id = ?`, id, function(err) {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        if (this.changes === 0) {
-            return res.status(404).json({ error: "找不到該筆資料" });
-        }
+    db.run(`DELETE FROM health_data WHERE id = ?`, req.params.id, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
         res.status(200).json({ message: "刪除成功" });
     });
 });
 
-app.listen(PORT, () => console.log(`伺服器已啟動於 Port: ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`伺服器已啟動於 Port:${PORT}`));
