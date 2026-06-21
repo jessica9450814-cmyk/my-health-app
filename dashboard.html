@@ -86,66 +86,59 @@
         function changeTheme(themeName) {
             document.body.className = themeName;
             localStorage.setItem('theme', themeName);
-            location.reload();
+            location.reload(); 
         }
 
         async function initDashboard() {
-            try {
-                const res = await fetch('/api/health');
-                const data = await res.json();
-               
-                if (data.length === 0) {
-                    document.getElementById('medicineStatus').textContent = "尚無紀錄";
-                    return;
-                }
-
-                const sortedData = [...data].reverse();
-                document.getElementById('advicePlaceholder').innerHTML = `<div class="advice-card">${generateAdvice(sortedData[0])}</div>`;
-
-                const today = new Date().toISOString().split('T')[0];
-                if (!data.some(row => row.record_date === today)) {
-                    document.getElementById('reminderBox').style.display = 'block';
-                    document.getElementById('reminderBox').innerHTML = `🔔 提醒：您今天尚未輸入紀錄喔！`;
-                }
-
-                document.getElementById('lastSys').textContent = sortedData[0].systolic;
-                document.getElementById('lastHr').textContent = sortedData[0].heart_rate;
-                if (sortedData[0].systolic > 130) {
-                    document.getElementById('alertBox').style.display = 'block';
-                    document.getElementById('alertBox').innerHTML = `⚠️ 注意：最新收縮壓偏高，請多留意！`;
-                }
-
-                updateMedicineStatus(data);
-
-                const tbody = document.getElementById('tableBody');
-                tbody.innerHTML = sortedData.map(row => {
-                    // 自動偵測 ID 欄位名稱
-                    const recordId = row.id || row._id;
-                    return `
-                        <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
-                            <td>${row.record_date}</td>
-                            <td>${row.systolic}/${row.diastolic}</td>
-                            <td>${row.heart_rate}</td>
-                            <td><span class="del-btn" onclick="deleteRecord('${recordId}')">🗑️</span></td>
-                        </tr>
-                    `;
-                }).join('');
-
-                const mainColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
-                new Chart(document.getElementById('myChart'), {
-                    type: 'line',
-                    data: {
-                        labels: sortedData.map(r => r.record_date),
-                        datasets: [
-                            { label: '收縮壓', data: sortedData.map(r => r.systolic), borderColor: mainColor, tension: 0.4 },
-                            { label: '舒張壓', data: sortedData.map(r => r.diastolic), borderColor: '#f39c12', tension: 0.4 },
-                            { label: '心跳', data: sortedData.map(r => r.heart_rate), borderColor: '#75d6ff', tension: 0.4 }
-                        ]
-                    }
-                });
-            } catch (err) {
-                console.error("載入失敗:", err);
+            const res = await fetch('/api/health');
+            const data = await res.json();
+            if (data.length === 0) {
+                document.getElementById('medicineStatus').textContent = "尚無紀錄";
+                return;
             }
+
+            const sortedData = [...data].reverse();
+            
+            document.getElementById('advicePlaceholder').innerHTML = `<div class="advice-card">${generateAdvice(sortedData[0])}</div>`;
+
+            const today = new Date().toISOString().split('T')[0];
+            if (!data.some(row => row.record_date === today)) {
+                document.getElementById('reminderBox').style.display = 'block';
+                document.getElementById('reminderBox').innerHTML = `🔔 提醒：您今天尚未輸入紀錄喔！`;
+            }
+
+            document.getElementById('lastSys').textContent = sortedData[0].systolic;
+            document.getElementById('lastHr').textContent = sortedData[0].heart_rate;
+            if (sortedData[0].systolic > 130) {
+                document.getElementById('alertBox').style.display = 'block';
+                document.getElementById('alertBox').innerHTML = `⚠️ 注意：最新收縮壓偏高，請多留意！`;
+            }
+
+            updateMedicineStatus(data);
+
+            const tbody = document.getElementById('tableBody');
+            // 【重要】確保 ID 欄位名稱對應正確，如果你的資料庫 ID 欄位是 _id，請改為 row._id
+            tbody.innerHTML = sortedData.map(row => `
+                <tr class="${row.systolic > 130 ? 'danger-row' : ''}">
+                    <td>${row.record_date}</td>
+                    <td>${row.systolic}/${row.diastolic}</td>
+                    <td>${row.heart_rate}</td>
+                    <td><span class="del-btn" onclick="deleteRecord('${row.id}')">🗑️</span></td>
+                </tr>
+            `).join('');
+
+            const mainColor = getComputedStyle(document.body).getPropertyValue('--main-color').trim();
+            new Chart(document.getElementById('myChart'), {
+                type: 'line',
+                data: {
+                    labels: sortedData.map(r => r.record_date),
+                    datasets: [
+                        { label: '收縮壓', data: sortedData.map(r => r.systolic), borderColor: mainColor, tension: 0.4 },
+                        { label: '舒張壓', data: sortedData.map(r => r.diastolic), borderColor: '#f39c12', tension: 0.4 },
+                        { label: '心跳', data: sortedData.map(r => r.heart_rate), borderColor: '#75d6ff', tension: 0.4 }
+                    ]
+                }
+            });
         }
 
         function generateAdvice(record) {
@@ -175,20 +168,17 @@
         }
 
         async function deleteRecord(id) {
-            if (!id || id === "undefined") {
-                alert("無法識別此筆資料的 ID，刪除失敗。");
-                return;
-            }
             if(confirm("確定刪除此筆紀錄？")) {
                 try {
                     const response = await fetch(`/api/health/${id}`, { method: 'DELETE' });
                     if (response.ok) {
+                        alert("刪除成功！");
                         location.reload();
                     } else {
-                        alert("刪除失敗，請確認後端 API 路徑是否正確。");
+                        alert("刪除失敗，請檢查 API 路徑或 ID。");
                     }
                 } catch (error) {
-                    console.error("網路請求錯誤:", error);
+                    console.error("刪除錯誤:", error);
                 }
             }
         }
@@ -207,4 +197,4 @@
         initDashboard();
     </script>
 </body>
-</html> 
+</html>  
